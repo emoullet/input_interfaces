@@ -1,0 +1,11 @@
+hand_joystick_3d_interface:
+  ros__parameters:
+    dead_zone: 0.05
+    saturation_zone: 0.6  # XY distance from reference where output saturates at ±1
+    depth_saturation_zone: 0.4  # Z distance in meters (40cm) where output saturates at ±1
+    landmark_index: 8  # 0=wrist, 8=index finger tip, 9=middle finger MCP, 12=middle finger tip
+    output_round_decimals: 2    enable_marker_visualization: true  # Set to false to disable RViz marker visualization    cmd_vel_marker_topic: "cmd_vel_marker"
+    cmd_vel_marker_frame_id: "base_link"
+    cmd_vel_marker_scale_x: 0.03
+    cmd_vel_marker_scale_y: 0.07
+    cmd_vel_marker_scale_z: 0.07
