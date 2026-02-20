@@ -87,9 +87,19 @@ if(ENABLE_FRANKA)
   )
 endif()
 
-# Install launch, config, and rviz directories
-install(DIRECTORY config launch
-  DESTINATION share/${PROJECT_NAME}
-)
+# Install launch and config directories
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/launch")
+  install(
+    DIRECTORY launch
+    DESTINATION share/${PROJECT_NAME}
+  )
+endif()
+
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/config")
+  install(
+    DIRECTORY config
+    DESTINATION share/${PROJECT_NAME}
+  )
+endif()
 
 ament_package()

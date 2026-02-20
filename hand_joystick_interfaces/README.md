@@ -60,6 +60,17 @@ Test the complete pipeline with video files using the integrated launch file:
 ros2 launch hand_joystick_interfaces test_video_2d_hand_joystick_launch.py folder_path:=$HOME/test_videos_hands/ fps:=30
 ```
 
+Enable optional RGB+depth fusion in `hand_landmarks_node` from the same launch:
+
+```bash
+ros2 launch hand_joystick_interfaces test_video_2d_hand_joystick_launch.py \
+	folder_path:=$HOME/test_videos_hands/ \
+	fps:=30 \
+	use_depth:=true \
+	depth_topic:=/camera/aligned_depth_to_color/image_raw \
+	camera_info_topic:=/camera/color/camera_info
+```
+
 This launch file starts:
 1. **video_publisher** - Publishes video frames from a folder
 2. **hand_landmarks_node** - Detects hand landmarks using MediaPipe
