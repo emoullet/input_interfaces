@@ -14,7 +14,8 @@ Recommended joystick and 3D mouse mapper for Cartesian control.
 
 `joystick_mapper` subscribes to `sensor_msgs/msg/Joy` and publishes:
 
-- `geometry_msgs/msg/TwistStamped` Cartesian velocity commands,
+- `extender_msgs/msg/CartesianVelocityCommand` Cartesian velocity commands with an angular
+  orientation-frame selector,
 - `std_msgs/msg/String` mode requests such as `geometric/jaco`,
   `geometric/snake`, and `behaviour/joint_target/home`.
 

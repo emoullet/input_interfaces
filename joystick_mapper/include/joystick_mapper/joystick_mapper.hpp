@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "geometry_msgs/msg/twist_stamped.hpp"
+#include "extender_msgs/msg/cartesian_velocity_command.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/joy.hpp"
 #include "std_msgs/msg/string.hpp"
@@ -73,6 +73,7 @@ namespace joystick_mapper
     std::string output_topic_;
     std::string mode_request_topic_;
     std::string output_frame_id_{"base_link"};
+    std::string orientation_frame_id_{"base_frame"};
 
     double deadzone_{0.2};
     AxisMap default_axes_{{0, 1.0}, {1, 1.0}, {2, 1.0}, {-1, 1.0}, {-1, 1.0}, {-1, 1.0}};
@@ -88,6 +89,6 @@ namespace joystick_mapper
 
     rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
     rclcpp::Publisher<std_msgs::msg::String>::SharedPtr mode_request_pub_;
-    rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr twist_pub_;
+    rclcpp::Publisher<extender_msgs::msg::CartesianVelocityCommand>::SharedPtr twist_pub_;
   };
 } // namespace joystick_mapper

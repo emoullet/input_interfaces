@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstddef>
 #include <functional>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -20,6 +21,14 @@ namespace joystick_mapper
     constexpr char kGeometricSnake[] = "snake";
     constexpr char kHomeRequest[] = "behaviour/joint_target/home";
     constexpr char kPassthroughRequest[] = "behaviour/passthrough";
+
+    bool isSupportedOrientationFrame(const std::string &orientation_frame_id)
+    {
+      using Command = extender_msgs::msg::CartesianVelocityCommand;
+      return orientation_frame_id == Command::BASE_FRAME ||
+             orientation_frame_id == Command::EFFECTOR_FRAME ||
+             orientation_frame_id == Command::HYBRID_FRAME;
+    }
 
     std::string normalizeStateName(std::string state)
     {
@@ -90,7 +99,8 @@ namespace joystick_mapper
     joy_sub_ = create_subscription<sensor_msgs::msg::Joy>(
         joy_topic_, 10, std::bind(&JoystickMapper::joyCallback, this, std::placeholders::_1));
 
-    twist_pub_ = create_publisher<geometry_msgs::msg::TwistStamped>(output_topic_, 10);
+    twist_pub_ =
+        create_publisher<extender_msgs::msg::CartesianVelocityCommand>(output_topic_, 10);
     mode_request_pub_ = create_publisher<std_msgs::msg::String>(mode_request_topic_, 10);
   }
 
@@ -100,6 +110,14 @@ namespace joystick_mapper
     output_topic_ = declare_parameter<std::string>("output_topic", "/joystick_cartesian_command");
     mode_request_topic_ = declare_parameter<std::string>("mode_request_topic", "/mode_request");
     output_frame_id_ = declare_parameter<std::string>("output_frame_id", "base_link");
+    orientation_frame_id_ =
+        declare_parameter<std::string>("orientation_frame_id", "base_frame");
+
+    if (!isSupportedOrientationFrame(orientation_frame_id_))
+    {
+      throw std::invalid_argument(
+          "orientation_frame_id must be one of: base_frame, effector_frame, hybrid_frame");
+    }
 
     deadzone_ = declare_parameter<double>("deadzone", 0.2);
     const AxisMap default_axes{{0, 1.0}, {1, 1.0}, {2, 1.0}, {-1, 1.0}, {-1, 1.0}, {-1, 1.0}};
@@ -229,9 +247,10 @@ namespace joystick_mapper
   {
     handleStateButtons(*msg);
 
-    geometry_msgs::msg::TwistStamped output;
+    extender_msgs::msg::CartesianVelocityCommand output;
     output.header.stamp = now();
     output.header.frame_id = output_frame_id_;
+    output.orientation_frame_id = orientation_frame_id_;
 
     const auto &axes = *active_axes_;
     output.twist.linear.x = mappedAxis(*msg, axes.linear_x);

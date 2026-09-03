@@ -1,11 +1,11 @@
 # joystick_mapper
 
 `joystick_mapper` converts `sensor_msgs/msg/Joy` messages into
-`geometry_msgs/msg/TwistStamped` Cartesian velocity commands.
+`extender_msgs/msg/CartesianVelocityCommand` messages.
 
 The package keeps joystick-specific details outside downstream command managers:
 axis indexes, axis signs, deadzones, and mode buttons are configured here, while
-other packages can consume a normal Cartesian twist command.
+other packages receive a Cartesian twist together with its angular orientation-frame selection.
 
 ## Topics
 
@@ -19,10 +19,12 @@ By default, the node publishes:
 
 | Topic | Type | Purpose |
 | --- | --- | --- |
-| `/joystick_cartesian_command` | `geometry_msgs/msg/TwistStamped` | Cartesian command generated from joystick axes. |
+| `/joystick_cartesian_command` | `extender_msgs/msg/CartesianVelocityCommand` | Cartesian command and angular orientation-frame selection generated from joystick input. |
 | `/mode_request` | `std_msgs/msg/String` | Structured mode requests from joystick buttons. |
 
-The output frame is configured with `output_frame_id`, defaulting to `base_link`.
+The physical output frame is configured with `output_frame_id`, defaulting to `base_link`.
+`orientation_frame_id` selects how a downstream manager interprets the angular axes and accepts
+exactly `base_frame`, `effector_frame`, or `hybrid_frame`.
 
 ## How It Works
 
@@ -81,7 +83,7 @@ press publishes `behaviour/passthrough`.
 
 B1 and B2 are local mapper modes. They do not publish `/mode_request`; they only
 switch which configured axis map is used for the outgoing
-`TwistStamped`.
+`CartesianVelocityCommand`.
 
 | Parameter | Effect |
 | --- | --- |
@@ -142,6 +144,7 @@ ros2 topic echo /joystick_cartesian_command
 | `output_topic` | string | `/joystick_cartesian_command` | Cartesian command output topic. |
 | `mode_request_topic` | string | `/mode_request` | Structured mode request topic. |
 | `output_frame_id` | string | `base_link` | Frame id used in output commands. |
+| `orientation_frame_id` | string | `base_frame` | Angular-input frame: `base_frame`, `effector_frame`, or `hybrid_frame`. |
 | `deadzone` | double | `0.2` | Axis deadzone, must be in `[0.0, 1.0)`. |
 | `axes.<name>.index` | int | varies | Joystick axis index, or `-1` to disable. |
 | `axes.<name>.scale` | double | `1.0` | Multiplier after deadzone processing. |
