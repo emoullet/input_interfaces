@@ -1,8 +1,10 @@
 #include <chrono>
+#include <cmath>
 #include <cstdlib>
 #include <memory>
 #include <optional>
 #include <stdexcept>
+#include <string>
 #include <thread>
 #include <vector>
 
@@ -42,9 +44,13 @@ TEST_F(JoystickMapperTest, PublishesConfiguredOrientationFrame)
        rclcpp::Parameter("output_frame_id", "base_link"),
        rclcpp::Parameter("orientation_frame_id", "hybrid_frame"),
        rclcpp::Parameter("deadzone", 0.0),
-       rclcpp::Parameter("axes.angular_x.index", 3),
-       rclcpp::Parameter("axes.angular_y.index", 4),
-       rclcpp::Parameter("axes.angular_z.index", 5)});
+       rclcpp::Parameter("modes.names", std::vector<std::string>{"b1"}),
+       rclcpp::Parameter("modes.b1.axes.linear_x.index", 0),
+       rclcpp::Parameter("modes.b1.axes.linear_y.index", 1),
+       rclcpp::Parameter("modes.b1.axes.linear_z.index", 2),
+       rclcpp::Parameter("modes.b1.axes.angular_x.index", 3),
+       rclcpp::Parameter("modes.b1.axes.angular_y.index", 4),
+       rclcpp::Parameter("modes.b1.axes.angular_z.index", 5)});
   auto mapper = std::make_shared<joystick_mapper::JoystickMapper>(options);
   auto test_node = std::make_shared<rclcpp::Node>("joystick_mapper_test_client");
 
@@ -96,4 +102,69 @@ TEST_F(JoystickMapperTest, RejectsInvalidOrientationFrame)
   const auto options = rclcpp::NodeOptions().parameter_overrides(
       {rclcpp::Parameter("orientation_frame_id", "ee_frame")});
   EXPECT_THROW(std::make_shared<joystick_mapper::JoystickMapper>(options), std::invalid_argument);
+}
+
+TEST_F(JoystickMapperTest, CyclesThroughConfiguredModesAndWrapsAround)
+{
+  const auto options = rclcpp::NodeOptions().parameter_overrides(
+      {rclcpp::Parameter("joy_topic", "/test_mode_cycle/joy"),
+       rclcpp::Parameter("output_topic", "/test_mode_cycle/command"),
+       rclcpp::Parameter("mode_request_topic", "/test_mode_cycle/mode"),
+       rclcpp::Parameter("deadzone", 0.0),
+       rclcpp::Parameter("local_mode_button_index", 0),
+       rclcpp::Parameter("local_mode_button_mode", "toggle"),
+       rclcpp::Parameter("modes.names", std::vector<std::string>{"b1", "b2", "precision"}),
+       rclcpp::Parameter("modes.b1.axes.linear_x.index", 0),
+       rclcpp::Parameter("modes.b2.axes.linear_x.index", 1),
+       rclcpp::Parameter("modes.precision.axes.linear_x.index", 2)});
+  auto mapper = std::make_shared<joystick_mapper::JoystickMapper>(options);
+  auto test_node = std::make_shared<rclcpp::Node>("joystick_mapper_mode_cycle_test_client");
+
+  std::optional<extender_msgs::msg::CartesianVelocityCommand> received;
+  auto command_sub = test_node->create_subscription<extender_msgs::msg::CartesianVelocityCommand>(
+      "/test_mode_cycle/command", 10,
+      [&received](const extender_msgs::msg::CartesianVelocityCommand &msg) { received = msg; });
+  auto joy_pub = test_node->create_publisher<sensor_msgs::msg::Joy>("/test_mode_cycle/joy", 10);
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(mapper);
+  executor.add_node(test_node);
+
+  auto publishUntilLinearX = [&](const sensor_msgs::msg::Joy &joy, double expected_linear_x) {
+    const auto deadline = std::chrono::steady_clock::now() + 2s;
+    do
+    {
+      joy_pub->publish(joy);
+      executor.spin_some();
+      std::this_thread::sleep_for(10ms);
+    } while (std::chrono::steady_clock::now() < deadline &&
+             (!received || std::abs(received->twist.linear.x - expected_linear_x) > 1e-6));
+    ASSERT_TRUE(received.has_value());
+    EXPECT_NEAR(received->twist.linear.x, expected_linear_x, 1e-6);
+  };
+
+  sensor_msgs::msg::Joy joy;
+  joy.axes = {0.4F, 0.6F, 0.8F};
+  joy.buttons = {0};
+
+  // starts in modes.names[0] ("b1")
+  publishUntilLinearX(joy, 0.4);
+
+  // rising edge on local_mode_button_index cycles b1 -> b2
+  joy.buttons = {1};
+  publishUntilLinearX(joy, 0.6);
+
+  // release then press again cycles b2 -> precision
+  joy.buttons = {0};
+  publishUntilLinearX(joy, 0.6);
+  joy.buttons = {1};
+  publishUntilLinearX(joy, 0.8);
+
+  // release then press again wraps precision -> b1
+  joy.buttons = {0};
+  publishUntilLinearX(joy, 0.8);
+  joy.buttons = {1};
+  publishUntilLinearX(joy, 0.4);
+
+  (void)command_sub;
 }
