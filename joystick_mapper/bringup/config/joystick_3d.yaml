@@ -5,29 +5,51 @@ joystick_mapper:
     mode_request_topic: "/mode_request"
     output_frame_id: "base_link"
     deadzone: 0.2
-    axes:
-      linear_x:
-        index: 0
-        scale: 1.0
-      linear_y:
-        index: 1
-        scale: 1.0
-      linear_z:
-        index: 2
-        scale: 1.0
-      angular_x:
-        index: -1
-        scale: 1.0
-      angular_y:
-        index: -1
-        scale: 1.0
-      angular_z:
-        index: -1
-        scale: 1.0
     local_mode_button_index: 1
     local_mode_button_mode: toggle
     modes:
+      names: ["b1", "b2", "b3"]
+      b1:
+        axes:
+          linear_x:
+            index: 0
+            scale: 1.0
+          linear_y:
+            index: 1
+            scale: 1.0
+          linear_z:
+            index: -1
+            scale: 1.0
+          angular_x:
+            index: -1
+            scale: 1.0
+          angular_y:
+            index: -1
+            scale: 1.0
+          angular_z:
+            index: -1
+            scale: 1.0
       b2:
+        axes:
+          linear_x:
+            index: -1
+            scale: 1.0
+          linear_y:
+            index: -1
+            scale: 1.0
+          linear_z:
+            index: 0
+            scale: 1.0
+          angular_x:
+            index: -1
+            scale: 1.0
+          angular_y:
+            index: -1
+            scale: 1.0
+          angular_z:
+            index: 1
+            scale: 1.0
+      b3:
         axes:
           linear_x:
             index: -1
@@ -45,7 +67,7 @@ joystick_mapper:
             index: 1
             scale: 1.0
           angular_z:
-            index: 2
+            index: -1
             scale: 1.0
     jaco_button_index: 11
     jaco_button_mode: toggle

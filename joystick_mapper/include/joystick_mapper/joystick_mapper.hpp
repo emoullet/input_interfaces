@@ -1,6 +1,8 @@
 #pragma once
 
+#include <cstddef>
 #include <string>
+#include <vector>
 
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -59,6 +61,7 @@ namespace joystick_mapper
     Button declareButton(const std::string &parameter_name, int default_button_index,
                          ButtonActivationMode default_activation_mode);
     void warnOnDuplicateButtonIndexes() const;
+    const AxisMap &activeAxes() const;
 
     void handleStateButtons(const sensor_msgs::msg::Joy &msg);
     void handleLocalModeButton(const sensor_msgs::msg::Joy &msg);
@@ -75,9 +78,9 @@ namespace joystick_mapper
     std::string output_frame_id_{"base_link"};
 
     double deadzone_{0.2};
-    AxisMap default_axes_{{0, 1.0}, {1, 1.0}, {2, 1.0}, {-1, 1.0}, {-1, 1.0}, {-1, 1.0}};
-    AxisMap b2_axes_;
-    const AxisMap *active_axes_{&default_axes_};
+    std::vector<std::string> mode_names_;
+    std::vector<AxisMap> mode_axes_;
+    std::size_t active_mode_index_{0};
 
     Button local_mode_button_;
     Button jaco_button_;

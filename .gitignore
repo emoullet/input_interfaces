@@ -20,3 +20,5 @@ __pycache__/
 # Ignore local data
 data/*
 rosbag*
+
+log/
