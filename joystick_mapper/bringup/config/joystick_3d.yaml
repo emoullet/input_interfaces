@@ -3,13 +3,13 @@ joystick_mapper:
     joy_topic: "/joy"
     output_topic: "/joystick_cartesian_command"
     mode_request_topic: "/mode_request"
-    output_frame_id: "base_link"
     deadzone: 0.2
     local_mode_button_index: 1
     local_mode_button_mode: toggle
     modes:
       names: ["b1", "b2", "b3"]
       b1:
+        angular_output_frame_id: "base_link"
         axes:
           linear_x:
             index: 0
@@ -30,6 +30,7 @@ joystick_mapper:
             index: -1
             scale: 1.0
       b2:
+        angular_output_frame_id: "effector_frame"
         axes:
           linear_x:
             index: -1
@@ -50,6 +51,7 @@ joystick_mapper:
             index: 1
             scale: 1.0
       b3:
+        angular_output_frame_id: "hybrid_frame"
         axes:
           linear_x:
             index: -1

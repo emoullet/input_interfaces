@@ -99,7 +99,7 @@ namespace joystick_mapper
     joy_topic_ = declare_parameter<std::string>("joy_topic", "/joy");
     output_topic_ = declare_parameter<std::string>("output_topic", "/joystick_cartesian_command");
     mode_request_topic_ = declare_parameter<std::string>("mode_request_topic", "/mode_request");
-    output_frame_id_ = declare_parameter<std::string>("output_frame_id", "base_link");
+    // output_frame_id_ = declare_parameter<std::string>("output_frame_id", "base_link");
 
     deadzone_ = declare_parameter<double>("deadzone", 0.2);
     const AxisMap disabled_axes{{-1, 1.0}, {-1, 1.0}, {-1, 1.0}, {-1, 1.0}, {-1, 1.0}, {-1, 1.0}};
@@ -122,6 +122,9 @@ namespace joystick_mapper
         continue;
       }
       mode_names_.push_back(name);
+      mode_angular_frame_ids_.push_back(
+          declare_parameter<std::string>("modes." + name + ".angular_output_frame_id",
+                                         "base_link"));
       mode_axes_.push_back(declareAxisMap("modes." + name + ".axes", disabled_axes));
     }
     if (mode_names_.empty())
@@ -224,6 +227,13 @@ namespace joystick_mapper
     return mode_axes_.empty() ? kNoModesConfigured : mode_axes_[active_mode_index_];
   }
 
+  const std::string &JoystickMapper::activeAngularFrameId() const
+  {
+    static const std::string kNoModesConfigured = "base_link";
+    return mode_angular_frame_ids_.empty() ? kNoModesConfigured
+                                          : mode_angular_frame_ids_[active_mode_index_];
+  }
+
   void JoystickMapper::warnOnDuplicateButtonIndexes() const
   {
     const std::vector<std::pair<std::string, int>> buttons{
@@ -259,7 +269,7 @@ namespace joystick_mapper
 
     geometry_msgs::msg::TwistStamped output;
     output.header.stamp = now();
-    output.header.frame_id = output_frame_id_;
+    output.header.frame_id = activeAngularFrameId();
 
     const auto &axes = activeAxes();
     output.twist.linear.x = mappedAxis(*msg, axes.linear_x);

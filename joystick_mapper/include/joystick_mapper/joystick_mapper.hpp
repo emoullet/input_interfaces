@@ -62,6 +62,7 @@ namespace joystick_mapper
                          ButtonActivationMode default_activation_mode);
     void warnOnDuplicateButtonIndexes() const;
     const AxisMap &activeAxes() const;
+    const std::string &activeAngularFrameId() const;
 
     void handleStateButtons(const sensor_msgs::msg::Joy &msg);
     void handleLocalModeButton(const sensor_msgs::msg::Joy &msg);
@@ -79,6 +80,7 @@ namespace joystick_mapper
 
     double deadzone_{0.2};
     std::vector<std::string> mode_names_;
+    std::vector<std::string> mode_angular_frame_ids_;
     std::vector<AxisMap> mode_axes_;
     std::size_t active_mode_index_{0};
 

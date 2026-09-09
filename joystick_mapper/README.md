@@ -22,7 +22,7 @@ By default, the node publishes:
 | `/joystick_cartesian_command` | `geometry_msgs/msg/TwistStamped` | Cartesian command generated from joystick axes. |
 | `/mode_request` | `std_msgs/msg/String` | Structured mode requests from joystick buttons. |
 
-The output frame is configured with `output_frame_id`, defaulting to `base_link`.
+Each local mode can declare its own `angular_output_frame_id` for the angular component. The mapper publishes the current mode's angular frame in `TwistStamped.header.frame_id`, while the linear motion remains aligned to the base frame convention for compatibility with the command interface. If a mode does not specify one, it falls back to `base_link` (Available options : `["base_link", "effector_frame", "hybrid_frame"`).
 
 ## How It Works
 
@@ -88,11 +88,14 @@ switch which configured axis map is used for the outgoing
 `TwistStamped`.
 
 Each name in `modes.names` must have a corresponding `modes.<name>.axes` block
-(see [How It Works](#how-it-works)). The mapper starts in `modes.names[0]`.
+and may also define `modes.<name>.angular_output_frame_id` (see [How It Works](#how-it-works)).
+The mapper starts in `modes.names[0]`; linear components keep the base-frame convention,
+while the angular component can use the mode-specific angular frame.
 
 | Parameter | Effect |
 | --- | --- |
 | `modes.names` | Ordered list of mode names to cycle through, e.g. `["b1", "b2", "precision"]`. |
+| `modes.<mode_name>.angular_output_frame_id` | Angular frame used for the mode's rotational component and published in the twist header. Defaults to `base_link`.  Available options : `["base_link", "effector_frame", "hybrid_frame"`|
 | `local_mode_button_index` | Cycles through `modes.names`, in order, wrapping back to the first entry. |
 | `local_mode_button_mode` | `toggle`/`trigger` cycle through all modes on each press; `hold` only distinguishes the first two entries of `modes.names` (mode 0 while released, mode 1 while held). |
 
@@ -146,9 +149,9 @@ ros2 topic echo /joystick_cartesian_command
 | `joy_topic` | string | `/joy` | Raw joystick input topic. |
 | `output_topic` | string | `/joystick_cartesian_command` | Cartesian command output topic. |
 | `mode_request_topic` | string | `/mode_request` | Structured mode request topic. |
-| `output_frame_id` | string | `base_link` | Frame id used in output commands. |
 | `deadzone` | double | `0.2` | Axis deadzone, must be in `[0.0, 1.0)`. |
 | `modes.names` | string array | `["b1"]` | Ordered list of local mode names to cycle through. |
+| `modes.<mode_name>.angular_output_frame_id` | string | `base_link` | Angular frame published in the output twist header while that mode is active; linear motion keeps the base-frame convention. |
 | `modes.<mode_name>.axes.<name>.index` | int | `-1` | Joystick axis index for that mode, or `-1` to disable. |
 | `modes.<mode_name>.axes.<name>.scale` | double | `1.0` | Multiplier after deadzone processing, for that mode. |
 | `local_mode_button_index` | int | `-1` | Button that cycles through `modes.names`. |
