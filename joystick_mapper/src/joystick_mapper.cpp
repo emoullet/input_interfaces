@@ -99,10 +99,11 @@ namespace joystick_mapper
     joy_topic_ = declare_parameter<std::string>("joy_topic", "/joy");
     output_topic_ = declare_parameter<std::string>("output_topic", "/joystick_cartesian_command");
     mode_request_topic_ = declare_parameter<std::string>("mode_request_topic", "/mode_request");
-    // output_frame_id_ = declare_parameter<std::string>("output_frame_id", "base_link");
 
     deadzone_ = declare_parameter<double>("deadzone", 0.2);
     const AxisMap disabled_axes{{-1, 1.0}, {-1, 1.0}, {-1, 1.0}, {-1, 1.0}, {-1, 1.0}, {-1, 1.0}};
+
+    debug_ = declare_parameter<bool>("debug", false);
 
     const auto requested_mode_names =
         declare_parameter<std::vector<std::string>>("modes.names", {"b1"});
@@ -334,7 +335,7 @@ namespace joystick_mapper
     }
 
     //display the active mode name in the terminal for debugging purposes
-    if (!mode_names_.empty())
+    if (!mode_names_.empty() && debug_==true)
     {
       RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000,
                            "Active joystick axesmode: %s", mode_names_[active_mode_index_].c_str());
@@ -373,9 +374,13 @@ namespace joystick_mapper
       publishModeRequest(request_scope + "/" + current_state);
     }
 
+    if (debug_==true)
+    {
     // display the current state in the terminal for debugging purposes
     RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000,
                          "Current %s state: %s", request_scope.c_str(), current_state.c_str());
+    }
+
     button.previous_button_pressed = pressed;
   }
 

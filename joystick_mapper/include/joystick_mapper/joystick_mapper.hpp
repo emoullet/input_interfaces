@@ -91,6 +91,8 @@ namespace joystick_mapper
 
     std::string current_geometric_state_{"both"};
 
+    bool debug_{false};
+
     rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
     rclcpp::Publisher<std_msgs::msg::String>::SharedPtr mode_request_pub_;
     rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr twist_pub_;
