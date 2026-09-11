@@ -99,14 +99,39 @@ namespace joystick_mapper
     joy_topic_ = declare_parameter<std::string>("joy_topic", "/joy");
     output_topic_ = declare_parameter<std::string>("output_topic", "/joystick_cartesian_command");
     mode_request_topic_ = declare_parameter<std::string>("mode_request_topic", "/mode_request");
-    output_frame_id_ = declare_parameter<std::string>("output_frame_id", "base_link");
 
     deadzone_ = declare_parameter<double>("deadzone", 0.2);
-    const AxisMap default_axes{{0, 1.0}, {1, 1.0}, {2, 1.0}, {-1, 1.0}, {-1, 1.0}, {-1, 1.0}};
-    const AxisMap b2_default_axes{{-1, 1.0}, {-1, 1.0}, {-1, 1.0}, {0, 1.0}, {1, 1.0}, {2, 1.0}};
+    const AxisMap disabled_axes{{-1, 1.0}, {-1, 1.0}, {-1, 1.0}, {-1, 1.0}, {-1, 1.0}, {-1, 1.0}};
 
-    default_axes_ = declareAxisMap("axes", default_axes);
-    b2_axes_ = declareAxisMap("modes.b2.axes", b2_default_axes);
+    debug_ = declare_parameter<bool>("debug", false);
+
+    const auto requested_mode_names =
+        declare_parameter<std::vector<std::string>>("modes.names", {"b1"});
+    mode_names_.clear();
+    mode_axes_.clear();
+    for (const auto &name : requested_mode_names)
+    {
+      if (name.empty())
+      {
+        RCLCPP_WARN(get_logger(), "Ignoring empty mode name in modes.names");
+        continue;
+      }
+      if (std::find(mode_names_.begin(), mode_names_.end(), name) != mode_names_.end())
+      {
+        RCLCPP_WARN(get_logger(), "Ignoring duplicate mode name '%s' in modes.names",
+                    name.c_str());
+        continue;
+      }
+      mode_names_.push_back(name);
+      mode_angular_frame_ids_.push_back(
+          declare_parameter<std::string>("modes." + name + ".angular_output_frame_id",
+                                         "base_link"));
+      mode_axes_.push_back(declareAxisMap("modes." + name + ".axes", disabled_axes));
+    }
+    if (mode_names_.empty())
+    {
+      RCLCPP_WARN(get_logger(), "No modes configured under modes.names; joystick output will be zero");
+    }
 
     local_mode_button_ =
         declareButton("local_mode_button_index", -1, ButtonActivationMode::TOGGLE);
@@ -196,6 +221,20 @@ namespace joystick_mapper
     return button;
   }
 
+  const JoystickMapper::AxisMap &JoystickMapper::activeAxes() const
+  {
+    static const AxisMap kNoModesConfigured{
+        {-1, 1.0}, {-1, 1.0}, {-1, 1.0}, {-1, 1.0}, {-1, 1.0}, {-1, 1.0}};
+    return mode_axes_.empty() ? kNoModesConfigured : mode_axes_[active_mode_index_];
+  }
+
+  const std::string &JoystickMapper::activeAngularFrameId() const
+  {
+    static const std::string kNoModesConfigured = "base_link";
+    return mode_angular_frame_ids_.empty() ? kNoModesConfigured
+                                          : mode_angular_frame_ids_[active_mode_index_];
+  }
+
   void JoystickMapper::warnOnDuplicateButtonIndexes() const
   {
     const std::vector<std::pair<std::string, int>> buttons{
@@ -231,9 +270,9 @@ namespace joystick_mapper
 
     geometry_msgs::msg::TwistStamped output;
     output.header.stamp = now();
-    output.header.frame_id = output_frame_id_;
+    output.header.frame_id = activeAngularFrameId();
 
-    const auto &axes = *active_axes_;
+    const auto &axes = activeAxes();
     output.twist.linear.x = mappedAxis(*msg, axes.linear_x);
     output.twist.linear.y = mappedAxis(*msg, axes.linear_y);
     output.twist.linear.z = mappedAxis(*msg, axes.linear_z);
@@ -276,16 +315,31 @@ namespace joystick_mapper
 
   void JoystickMapper::handleLocalModeButton(const sensor_msgs::msg::Joy &msg)
   {
+    std::size_t previous_mode_index_ = active_mode_index_;
     const bool pressed = isButtonPressed(msg, local_mode_button_.button_index);
     if (local_mode_button_.activation_mode == ButtonActivationMode::HOLD)
     {
-      active_axes_ = pressed ? &b2_axes_ : &default_axes_;
+      // hold only ever distinguishes the first two configured modes
+      active_mode_index_ = (pressed && mode_axes_.size() > 1) ? 1 : 0;
     }
-    else if (pressed && !local_mode_button_.previous_button_pressed)
+    else if (pressed && !local_mode_button_.previous_button_pressed && !mode_axes_.empty())
     {
-      active_axes_ = active_axes_ == &b2_axes_ ? &default_axes_ : &b2_axes_;
+      active_mode_index_ = (active_mode_index_ + 1) % mode_axes_.size();
     }
     local_mode_button_.previous_button_pressed = pressed;
+
+    // display if the active mode has changed
+    if (active_mode_index_ != previous_mode_index_)
+    {
+      RCLCPP_INFO(get_logger(), "Active joystick mode changed from axes mode %s to  %s", mode_names_[previous_mode_index_].c_str(), mode_names_[active_mode_index_].c_str());
+    }
+
+    //display the active mode name in the terminal for debugging purposes
+    if (!mode_names_.empty() && debug_==true)
+    {
+      RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000,
+                           "Active joystick axesmode: %s", mode_names_[active_mode_index_].c_str());
+    } 
   }
 
   void JoystickMapper::handleStateButton(
@@ -319,6 +373,14 @@ namespace joystick_mapper
       }
       publishModeRequest(request_scope + "/" + current_state);
     }
+
+    if (debug_==true)
+    {
+    // display the current state in the terminal for debugging purposes
+    RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000,
+                         "Current %s state: %s", request_scope.c_str(), current_state.c_str());
+    }
+
     button.previous_button_pressed = pressed;
   }
 

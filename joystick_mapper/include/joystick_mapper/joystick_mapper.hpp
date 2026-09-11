@@ -1,6 +1,8 @@
 #pragma once
 
+#include <cstddef>
 #include <string>
+#include <vector>
 
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -59,6 +61,8 @@ namespace joystick_mapper
     Button declareButton(const std::string &parameter_name, int default_button_index,
                          ButtonActivationMode default_activation_mode);
     void warnOnDuplicateButtonIndexes() const;
+    const AxisMap &activeAxes() const;
+    const std::string &activeAngularFrameId() const;
 
     void handleStateButtons(const sensor_msgs::msg::Joy &msg);
     void handleLocalModeButton(const sensor_msgs::msg::Joy &msg);
@@ -75,9 +79,10 @@ namespace joystick_mapper
     std::string output_frame_id_{"base_link"};
 
     double deadzone_{0.2};
-    AxisMap default_axes_{{0, 1.0}, {1, 1.0}, {2, 1.0}, {-1, 1.0}, {-1, 1.0}, {-1, 1.0}};
-    AxisMap b2_axes_;
-    const AxisMap *active_axes_{&default_axes_};
+    std::vector<std::string> mode_names_;
+    std::vector<std::string> mode_angular_frame_ids_;
+    std::vector<AxisMap> mode_axes_;
+    std::size_t active_mode_index_{0};
 
     Button local_mode_button_;
     Button jaco_button_;
@@ -85,6 +90,8 @@ namespace joystick_mapper
     Button home_button_;
 
     std::string current_geometric_state_{"both"};
+
+    bool debug_{false};
 
     rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
     rclcpp::Publisher<std_msgs::msg::String>::SharedPtr mode_request_pub_;
