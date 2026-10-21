@@ -40,6 +40,17 @@ Use this package for new joystick integrations, especially with
 
 See [`joystick_mapper/README.md`](joystick_mapper/README.md).
 
+### `face_interface`
+
+PlayAbility face-control bringup using the virtual Xbox controller and
+`joystick_mapper`. It publishes raw axes and buttons on `/joy/playability`
+and Cartesian commands on `/joystick_cartesian_command` for `cartesian_manager`.
+Button 11 alternates between translation and rotation. The package contains
+launch/configuration files and reuses the existing mapper.
+
+See [`face_interface/README.md`](face_interface/README.md) for setup, tests,
+and Explorer integration with a single mapper.
+
 ### `mouse_joystick_interface`
 
 Browser-based two-axis joystick for mouse input. It publishes normalized axes
