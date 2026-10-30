@@ -26,7 +26,7 @@ def _launch_nodes(context):
 
     if start_playability:
         actions.append(ExecuteProcess(
-            cmd=['flatpak', 'run', 'com.playability.playAbility'],
+            cmd=['playability'],
             output='screen',
         ))
 
@@ -70,7 +70,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'start_playability', default_value='true',
-            description='Start PlayAbility through Flatpak.',
+            description='Start the Debian-installed PlayAbility executable.',
         ),
         DeclareLaunchArgument(
             'start_joy', default_value='true',
