@@ -8,7 +8,7 @@ joy_playability:
 joystick_mapper:
   ros__parameters:
     joy_topic: /joy/playability
-    output_topic: /joystick_cartesian_command
+    output_topic: /face_joystick_cartesian_command
     mode_request_topic: /mode_request
     deadzone: 0.2
     modes:
