@@ -25,3 +25,5 @@ log/
 
 # Hand joystick local tests
 /hand_joystick_interfaces/test/
+
+mouse_joystick_interface/test/
