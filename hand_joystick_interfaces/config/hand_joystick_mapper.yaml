@@ -1,5 +1,6 @@
 joystick_mapper:
   ros__parameters:
+    mapper_name: hand
     joy_topic: "/hand_joy"
     output_topic: "/hand_joystick_cartesian_command"
     mode_request_topic: "/mode_request"
